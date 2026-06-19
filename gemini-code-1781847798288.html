@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>学習タイマー</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
+    .container{max-width:720px;margin:0 auto;padding:2rem 1rem}
+
+    /* AUTH SCREEN */
+    .auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+    .auth-box{background:#fff;border-radius:16px;border:0.5px solid #ddd;padding:2rem;width:100%;max-width:400px}
+    .auth-box h1{font-size:22px;font-weight:500;margin-bottom:4px}
+    .auth-box p{font-size:14px;color:#666;margin-bottom:1.5rem}
+    .auth-tabs{display:flex;margin-bottom:1.5rem;border:0.5px solid #ddd;border-radius:8px;overflow:hidden}
+    .auth-tab{flex:1;padding:8px;font-size:14px;background:none;border:none;cursor:pointer;color:#888}
+    .auth-tab.active{background:#1a1a1a;color:#fff}
+    .auth-field{margin-bottom:12px}
+    .auth-field label{font-size:13px;color:#666;display:block;margin-bottom:4px}
+    .auth-field input{width:100%;padding:10px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+    .auth-btn{width:100%;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:500;margin-top:4px}
+    .auth-btn:hover{opacity:.85}
+    .auth-btn.secondary{background:#f0f0f0;color:#1a1a1a;margin-top:8px}
+    .auth-error{font-size:13px;color:#e74c3c;margin-top:8px;text-align:center;display:none}
+    .auth-loading{text-align:center;color:#888;font-size:14px;padding:1rem}
+
+    /* MAIN APP */
+    .main-app{display:none}
+    .header{margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .header-left h1{font-size:20px;font-weight:500}
+    .header-left p{font-size:13px;color:#666;margin-top:2px}
+    .header-right{display:flex;align-items:center;gap:8px}
+    .header-pt{display:flex;align-items:center;gap:5px;background:#fff3cd;border:0.5px solid #ffc107;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:500;color:#856404}
+    .header-user{font-size:12px;color:#888;display:flex;align-items:center;gap:4px}
+    .logout-btn{font-size:12px;padding:4px 10px;border:0.5px solid #ddd;border-radius:6px;background:none;cursor:pointer;color:#888}
+    .logout-btn:hover{background:#f0f0f0}
+    .sync-btn{font-size:12px;padding:4px 10px;border:0.5px solid #185FA5;border-radius:6px;background:none;cursor:pointer;color:#185FA5;display:flex;align-items:center;gap:4px}
+    .sync-btn:hover{background:#f0f6ff}
+    .sync-btn.syncing{opacity:.5;pointer-events:none}
+
+    .tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:0.5px solid #ddd;overflow-x:auto}
+    .tab{font-size:13px;padding:8px 11px;background:none;border:none;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap}
+    .tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500}
+    .panel{display:none}.panel.active{display:block}
+
+    .subject-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:1.5rem}
+    .subject-card{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1rem 1.25rem;cursor:pointer;transition:border-color .15s}
+    .subject-card:hover{border-color:#aaa}
+    .subject-card.active{border:2px solid #185FA5}
+    .subject-icon{font-size:20px;margin-bottom:8px;color:#888}
+    .subject-name{font-size:14px;font-weight:500;margin-bottom:4px}
+    .subject-today{font-size:13px;color:#888}
+
+    .timer-display{background:#ebebeb;border-radius:12px;padding:2rem;text-align:center;margin-bottom:1.5rem}
+    .timer-subject{font-size:14px;color:#666;margin-bottom:8px}
+    .timer-time{font-size:48px;font-weight:500;letter-spacing:2px;font-variant-numeric:tabular-nums}
+    .timer-controls{display:flex;gap:8px;justify-content:center;margin-top:1rem}
+    .timer-btn{padding:8px 20px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+    .timer-btn:hover{background:#f0f0f0}
+    .timer-btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+    .timer-btn.primary:hover{opacity:.85}
+    .pt-earn-preview{margin-top:10px;font-size:13px;color:#856404;background:#fff3cd;border-radius:8px;padding:6px 12px;display:inline-block}
+
+    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+    .stat-card{background:#ebebeb;border-radius:8px;padding:1rem}
+    .stat-label{font-size:13px;color:#666;margin-bottom:6px}
+    .stat-value{font-size:22px;font-weight:500}
+    .stat-unit{font-size:13px;color:#888;margin-left:2px}
+
+    .add-section{border-top:0.5px solid #ddd;padding-top:1rem}
+    .add-section p{font-size:13px;color:#666;margin-bottom:6px}
+    .add-form{display:flex;gap:8px;flex-wrap:wrap}
+    .add-form input,.add-form select{padding:8px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+    .add-form input{flex:1;min-width:120px}
+    .add-form select{width:110px}
+
+    .log-list{display:flex;flex-direction:column;gap:8px}
+    .log-item{background:#fff;border:0.5px solid #ddd;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+    .log-left{display:flex;align-items:center;gap:10px}
+    .log-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .log-name{font-size:14px;font-weight:500}
+    .log-date{font-size:12px;color:#888}
+    .empty-msg{font-size:14px;color:#888;text-align:center;padding:2rem 0}
+
+    .chart-wrap{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.25rem}
+    .chart-title{font-size:14px;font-weight:500;margin-bottom:1rem}
+    .bars{display:flex;align-items:flex-end;gap:8px;height:160px}
+    .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+    .bar-fill{width:100%;border-radius:4px 4px 0 0;min-height:2px}
+    .bar-label{font-size:11px;color:#888}
+    .bar-val{font-size:11px;color:#888}
+    .legend{display:flex;gap:12px;margin-top:1rem;flex-wrap:wrap}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#888}
+    .legend-dot{width:8px;height:8px;border-radius:50%}
+
+    .bgm-section{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+    .bgm-title{font-size:14px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+    .yt-input-row{display:flex;gap:8px;margin-bottom:1rem}
+    .yt-input-row input{flex:1;padding:8px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+    .yt-note{font-size:12px;color:#bbb;line-height:1.6}
+    .yt-open-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 16px;background:#FF0000;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;text-decoration:none}
+    
+    /* PET */
+    .pet-panel{display:flex;flex-direction:column;gap:1rem}
+    .pet-stage{background:linear-gradient(135deg,#e8f4ff,#f0e8ff);border-radius:16px;padding:1.5rem;text-align:center;border:0.5px solid #ddd}
+    .pet-name-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px}
+    .pet-name(font-size:18px;font-weight:500}
+    .pet-edit-btn{background:none;border:none;cursor:pointer;color:#aaa;font-size:16px}
+    .rank-badge{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;letter-spacing:.5px}
+    .rank-R{background:#ddd;color:#555}
+    .rank-SR{background:linear-gradient(90deg,#4facfe,#00f2fe);color:#fff}
+    .rank-SSR{background:linear-gradient(90deg,#f7971e,#ffd200);color:#fff}
+    .pet-level-badge{font-size:12px;background:#185FA5;color:#fff;border-radius:20px;padding:2px 10px}
+    .pet-canvas-wrap{margin:1rem auto;width:160px;height:160px}
+    .pet-canvas-wrap canvas{width:160px;height:160px}
+    .xp-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+    .xp-label{font-size:12px;color:#888;white-space:nowrap}
+    .xp-bar-bg{flex:1;height:10px;background:#ddd;border-radius:5px;overflow:hidden}
+    .xp-bar-fill{height:100%;background:linear-gradient(90deg,#185FA5,#7c3aed);border-radius:5px;transition:width .5s ease}
+    .xp-text{font-size:12px;color:#888;white-space:nowrap}
+
+    .exp-section{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.25rem}
+    .exp-title{font-size:15px;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+    .exp-rate{font-size:13px;color:#888;margin-bottom:12px}
+    .exp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+    .exp-item{border:0.5px solid #ddd;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;background:#fafafa;transition:border-color .15s,background .15s}
+    .exp-item:hover{border-color:#185FA5;background:#f0f6ff}
+    .exp-item-icon{font-size:26px;margin-bottom:6px}
+    .exp-item-name{font-size:13px;font-weight:500;margin-bottom:2px}
+    .exp-item-xp{font-size:12px;color:#7c3aed;margin-bottom:2px}
+    .exp-item-cost{font-size:12px;color:#856404;display:flex;align-items:center;justify-content:center;gap:3px}
+
+    .shop-section{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.25rem}
+    .shop-header{display:flex;align-items:center;margin-bottom:12px}
+    .shop-title{font-size:15px;font-weight:500;display:flex;align-items:center;gap:6px}
+    .shop-pt-badge{margin-left:auto;font-size:13px;color:#856404}
+    .shop-tabs{display:flex;margin-bottom:12px;border:0.5px solid #ddd;border-radius:8px;overflow:hidden}
+    .shop-tab{flex:1;padding:7px 4px;font-size:12px;background:none;border:none;cursor:pointer;color:#888}
+    .shop-tab.active{background:#1a1a1a;color:#fff}
+    .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+    .shop-item{border:0.5px solid #ddd;border-radius:10px;padding:12px 10px;text-align:center;cursor:pointer;background:#fafafa;transition:border-color .15s,background .15s}
+    .shop-item:hover:not(.equipped){border-color:#185FA5;background:#f0f6ff}
+    .shop-item.equipped{border:2px solid #0F6E56;background:#e0fff4;cursor:default}
+    .shop-item.owned-acc{border-color:#0F6E56;background:#f0fff8}
+    .shop-item-icon{font-size:30px;margin-bottom:6px}
+    .shop-item-name{font-size:13px;font-weight:500;margin-bottom:4px}
+    .shop-item-cost{font-size:12px;color:#856404;display:flex;align-items:center;justify-content:center;gap:3px}
+    .shop-item-badge{font-size:11px;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block}
+    .badge-equipped{background:#c3f0e0;color:#0a4a32}
+    .badge-owned{background:#d4edda;color:#155724}
+
+    /* GACHA */
+    .gacha-panel{display:flex;flex-direction:column;gap:1rem}
+    .gacha-banner{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-radius:16px;padding:2rem;text-align:center;color:#fff;position:relative;overflow:hidden}
+    .gacha-banner::before{content:'✨';font-size:80px;position:absolute;opacity:.07;top:-10px;right:-10px}
+    .gacha-banner h2{font-size:20px;font-weight:700;margin-bottom:6px}
+    .gacha-banner p{font-size:13px;opacity:.7;margin-bottom:1.5rem}
+    .gacha-rates{display:flex;gap:8px;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap}
+    .rate-badge{font-size:12px;padding:4px 12px;border-radius:20px}
+    .rate-R{background:rgba(255,255,255,.1);color:#ccc}
+    .rate-SR{background:rgba(79,172,254,.2);color:#4facfe}
+    .rate-SSR{background:rgba(247,151,30,.2);color:#ffd200}
+    .gacha-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .gacha-btn{padding:10px 20px;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:500;transition:opacity .2s}
+    .gacha-btn:hover{opacity:.85}
+    .gacha-btn-cost{font-size:11px;opacity:.75;font-weight:400}
+    .gacha-btn-1{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+    .gacha-btn-10{background:linear-gradient(135deg,#f7971e,#ffd200);color:#1a1a1a}
+    .gacha-btn-ticket{background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff}
+    .ticket-count{font-size:13px;color:#fff;opacity:.8;margin-top:8px}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:1rem}
+    .modal-overlay.show{display:flex}
+    .modal-box{background:#fff;border-radius:16px;padding:1.5rem;width:340px;max-width:95vw;max-height:90vh;overflow-y:auto}
+    .modal-box h3{font-size:16px;font-weight:500;margin-bottom:12px}
+    .modal-box input{width:100%;padding:8px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;margin-bottom:12px}
+    .modal-btns{display:flex;gap:8px;justify-content:flex-end}
+
+    .result-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:1rem}
+    .result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
+    .result-card{border-radius:12px;padding:14px 10px;text-align:center;position:relative;animation:popIn .3s ease both}
+    .result-card.R{background:linear-gradient(135deg,#f0f0f0,#ddd);border:1px solid #ccc}
+    .result-card.SR{background:linear-gradient(135deg,#e0f4ff,#b3e0ff);border:1px solid #4facfe}
+    .result-card.SSR{background:linear-gradient(135deg,#fff8e0,#ffe066);border:2px solid #ffd200}
+    .result-card-icon{font-size:36px;margin-bottom:6px}
+    .result-card-name{font-size:13px;font-weight:500;margin-bottom:4px}
+    .result-new-badge{position:absolute;top:6px;right:6px;background:#e74c3c;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px}
+    @keyframes popIn{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+
+    .collection-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+    .col-card{border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative}
+    .col-card.R{background:linear-gradient(135deg,#f0f0f0,#ddd);border:1px solid #ccc}
+    .col-card.SR{background:linear-gradient(135deg,#e0f4ff,#b3e0ff);border:1px solid #4facfe}
+    .col-card.SSR{background:linear-gradient(135deg,#fff8e0,#ffe066);border:2px solid #ffd200}
+    .col-card.selected-main{box-shadow:0 0 0 3px #185FA5;transform:scale(1.03)}
+    .col-card:hover{transform:scale(1.04)}
+    .col-card-icon{font-size:34px;margin-bottom:6px}
+    .col-card-name{font-size:13px;font-weight:500;margin-bottom:4px}
+    .col-count{font-size:11px;color:#aaa}
+    .main-badge{position:absolute;top:6px;left:6px;background:#185FA5;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px}
+    .col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .col-title{font-size:15px;font-weight:500}
+    .col-hint{font-size:12px;color:#aaa}
+
+    /* RANKING */
+    .ranking-panel{display:flex;flex-direction:column;gap:1rem}
+    .ranking-setup{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.25rem}
+    .ranking-setup h3{font-size:15px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .ranking-setup input{width:100%;padding:8px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;margin-bottom:10px;background:#fff;color:#1a1a1a}
+    .ranking-mycard{background:linear-gradient(135deg,#e8f4ff,#f0e8ff);border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #ddd;display:flex;align-items:center;gap:12px}
+    .ranking-mycard-info{flex:1}
+    .ranking-mycard-name{font-size:15px;font-weight:500}
+    .ranking-mycard-sub{font-size:13px;color:#666;margin-top:2px}
+    .ranking-board{background:#fff;border:0.5px solid #ddd;border-radius:12px;overflow:hidden}
+    .ranking-board-header{padding:12px 16px;border-bottom:0.5px solid #ddd;display:flex;align-items:center;justify-content:space-between}
+    .ranking-board-title{font-size:14px;font-weight:500}
+    .ranking-sort-btns{display:flex;gap:4px}
+    .sort-btn{font-size:12px;padding:4px 10px;border:0.5px solid #ddd;border-radius:6px;background:none;cursor:pointer;color:#888}
+    .sort-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+    .ranking-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:0.5px solid #f0f0f0}
+    .ranking-row:last-child{border-bottom:none}
+    .ranking-row.me{background:#f0f6ff}
+    .ranking-rank{font-size:18px;font-weight:700;min-width:32px;text-align:center}
+    .rank-gold{color:#FFD700}.rank-silver{color:#C0C0C0}.rank-bronze{color:#CD7F32}
+    .ranking-icon{font-size:26px}
+    .ranking-info{flex:1}
+    .ranking-username{font-size:14px;font-weight:500}
+    .ranking-sub{font-size:12px;color:#888;margin-top:2px}
+    .ranking-score{font-size:14px;font-weight:500;color:#185FA5;text-align:right}
+    .ranking-score-label{font-size:11px;color:#aaa;text-align:right}
+    .ranking-empty{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+    .ranking-loading{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+
+    .pt-toast{position:fixed;top:20px;right:20px;background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;opacity:0;transform:translateY(-10px);transition:opacity .3s,transform .3s;pointer-events:none;z-index:999}
+    .pt-toast.show{opacity:1;transform:translateY(0)}
+
+    @media(prefers-color-scheme:dark){
+      body{background:#1c1c1c;color:#f0f0f0}
+      .auth-box{background:#2a2a2a;border-color:#3a3a3a}
+      .auth-field input{background:#3a3a3a;border-color:#4a4a4a;color:#f0f0f0}
+      .auth-tabs{border-color:#3a3a3a}
+      .auth-tab{color:#888}.auth-tab.active{background:#f0f0f0;color:#1a1a1a}
+      .auth-btn.secondary{background:#3a3a3a;color:#f0f0f0}
+      .subject-card,.timer-btn:not(.primary),.log-item,.chart-wrap,.add-form input,.add-form select{background:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
+      .timer-display,.stat-card{background:#252525}
+      .timer-btn.primary{background:#f0f0f0;color:#1a1a1a;border-color:#f0f0f0}
+      .tabs{border-color:#3a3a3a}.tab{color:#888}.tab.active{color:#f0f0f0;border-bottom-color:#f0f0f0}
+      .add-section{border-color:#3a3a3a}
+      .bgm-section,.shop-section,.exp-section,.ranking-setup,.ranking-board{background:#2a2a2a;border-color:#3a3a3a}
+      .bgm-tabs,.shop-tabs{border-color:#3a3a3a}
+      .bgm-tab,.shop-tab{color:#888}.bgm-tab.active,.shop-tab.active{background:#f0f0f0;color:#1a1a1a}
+      .yt-input-row input,.ranking-setup input{background:#3a3a3a;border-color:#4a4a4a;color:#f0f0f0}
+      .pet-stage,.ranking-mycard{background:linear-gradient(135deg,#1a2a3a,#2a1a3a);border-color:#3a3a3a}
+      .shop-item,.exp-item{background:#2a2a2a;border-color:#3a3a3a}
+      .shop-item:hover:not(.equipped),.exp-item:hover{background:#1e2a3a}
+      .shop-item.equipped{background:#0a2a1a}.shop-item.owned-acc{background:#1a2a1a}
+      .xp-bar-bg{background:#3a3a3a}
+      .modal-box{background:#2a2a2a;color:#f0f0f0}
+      .modal-box input{background:#3a3a3a;border-color:#4a4a4a;color:#f0f0f0}
+      .ranking-row{border-color:#3a3a3a}.ranking-row.me{background:#1e2a3a}
+      .ranking-board-header{border-color:#3a3a3a}
+      .sort-btn{border-color:#3a3a3a;color:#888}
+      .logout-btn{border-color:#3a3a3a;color:#888}
+      .sync-btn{border-color:#4facfe;color:#4facfe}
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-screen" id="auth-screen">
+    <div class="auth-box">
+      <h1>📚 学習タイマー</h1>
+      <p>ログインしてペットを育てよう！</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">ログイン</button>
+        <button class="auth-tab" onclick="switchAuthTab('signup')">新規登録</button>
+      </div>
+      <div id="auth-login">
+        <div class="auth-field"><label>メールアドレス</label><input type="email" id="login-email" placeholder="example@email.com"/></div>
+        <div class="auth-field"><label>パスワード</label><input type="password" id="login-password" placeholder="パスワード"/></div>
+        <button class="auth-btn" onclick="doLogin()">ログイン</button>
+        <button class="auth-btn secondary" onclick="doGuest()">ゲストとして続ける（ローカル保存）</button>
+        <p style="text-align:center;margin-top:10px"><a href="#" onclick="switchAuthTab('reset');return false" style="font-size:13px;color:#185FA5;text-decoration:none">パスワードを忘れた方はこちら</a></p>
+      </div>
+      <div id="auth-signup" style="display:none">
+        <div class="auth-field"><label>メールアドレス</label><input type="email" id="signup-email" placeholder="example@email.com"/></div>
+        <div class="auth-field"><label>パスワード（6文字以上）</label><input type="password" id="signup-password" placeholder="パスワード"/></div>
+        <div class="auth-field"><label>ユーザー名</label><input type="text" id="signup-username" placeholder="ニックネーム" maxlength="15"/></div>
+        <button class="auth-btn" onclick="doSignup()">アカウント作成</button>
+      </div>
+      <div id="auth-reset" style="display:none">
+        <p style="font-size:13px;color:#666;margin-bottom:12px">登録したメールアドレスにパスワード再設定用のリンクを送ります。</p>
+        <div class="auth-field"><label>メールアドレス</label><input type="email" id="reset-email" placeholder="example@email.com"/></div>
+        <button class="auth-btn" onclick="doPasswordReset()">再設定メールを送信</button>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <div class="auth-loading" id="auth-loading" style="display:none">通信中...</div>
+    </div>
+  </div>
+
+  <div class="main-app" id="main-app">
+    <div class="container">
+      <div class="header">
+        <div class="header-left">
+          <h1>学習タイマー</h1>
+          <p id="header-email-display"></p>
+        </div>
+        <div class="header-right">
+          <div class="header-pt">💰 <span id="header-pt-val">0</span> pt</div>
+          <button class="sync-btn" id="sync-btn" onclick="manualSync()">🔄 同期</button>
+          <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('timer')">タイマー</button>
+        <button class="tab" onclick="switchTab('logs')">履歴・分析</button>
+        <button class="tab" onclick="switchTab('music')">BGM</button>
+        <button class="tab" onclick="switchTab('pet')">ペット・ショップ</button>
+        <button class="tab" onclick="switchTab('gacha')">ガチャ</button>
+        <button class="tab" onclick="switchTab('ranking')">ランキング</button>
+      </div>
+
+      <div class="panel active" id="panel-timer">
+        <div class="subject-grid" id="subject-grid"></div>
+        <div class="timer-display">
+          <div class="timer-subject" id="timer-subject-name">科目が選択されていません</div>
+          <div class="timer-time" id="timer-time-display">00:00:00</div>
+          <div class="pt-earn-preview" id="pt-earn-preview" style="display:none"></div>
+          <div class="timer-controls">
+            <button class="timer-btn primary" id="timer-start-btn" onclick="toggleTimer()">スタート</button>
+            <button class="timer-btn" onclick="resetTimer()">リセット</button>
+          </div>
+        </div>
+        <div class="add-section">
+          <p>科目の追加</p>
+          <div class="add-form">
+            <input type="text" id="new-sub-name" placeholder="例: 数学、英語"/>
+            <select id="new-sub-color">
+              <option value="#185FA5">青</option>
+              <option value="#e74c3c">赤</option>
+              <option value="#2ecc71">緑</option>
+              <option value="#f1c40f">黄</option>
+              <option value="#9b59b6">紫</option>
+            </select>
+            <button class="timer-btn" onclick="addSubject()">追加</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-logs">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">今日</div><div class="stat-value" id="stat-today">0</div></div>
+          <div class="stat-card"><div class="stat-label">今週</div><div class="stat-value" id="stat-week">0</div></div>
+          <div class="stat-card"><div class="stat-label">トータル</div><div class="stat-value" id="stat-total">0</div></div>
+        </div>
+        <div class="chart-wrap" style="margin-bottom:1.5rem">
+          <div class="chart-title">過去7日間の学習状況</div>
+          <div class="bars" id="chart-bars"></div>
+          <div class="legend" id="chart-legend"></div>
+        </div>
+        <div class="log-list" id="log-list"></div>
+      </div>
+
+      <div class="panel" id="panel-music">
+        <div class="bgm-section">
+          <div class="bgm-title">🎵 YouTube 外部プレイヤー</div>
+          <div class="yt-input-row">
+            <input type="text" id="bgm-url-input" placeholder="YouTubeの動画URLやプレイリストのURL"/>
+            <button class="timer-btn" onclick="saveBgmUrl()">URL保存</button>
+          </div>
+          <p class="yt-note">※ 音声を流しながらタイマーを利用したい場合は、保存後に下のボタンから別ウィンドウでYouTubeを開き、再生したまま学習を行ってください。</p>
+          <a href="#" id="yt-open-link" target="_blank" class="yt-open-btn" style="display:none">🔴 YouTubeを別窓で開く</a>
+        </div>
+        <div id="mp-container" style="display:none;"></div>
+      </div>
+
+      <div class="panel" id="panel-pet">
+        <div class="pet-panel">
+          <div class="pet-stage">
+            <div class="pet-name-row">
+              <span class="rank-badge" id="pet-rank-badge"></span>
+              <span class="pet-name" id="pet-name-display">ペット</span>
+              <button class="pet-edit-btn" onclick="openRenameModal()">✏️</button>
+              <span class="pet-level-badge" id="pet-level-display">Lv.1</span>
+            </div>
+            <div class="pet-canvas-wrap"><canvas id="petCanvas" width="160" height="160"></canvas></div>
+            <div class="xp-row">
+              <span class="xp-label">経験値</span>
+              <div class="xp-bar-bg"><div class="xp-bar-fill" id="pet-xp-fill" style="width:0%"></div></div>
+              <span class="xp-text" id="pet-xp-text">0 / 100</span>
+            </div>
+          </div>
+          <div class="exp-section">
+            <div class="exp-title">🍖 育成アイテム</div>
+            <p class="exp-rate" id="item-multiplier-desc">現在の獲得経験値: 1倍</p>
+            <div class="exp-grid" id="exp-items-grid"></div>
+          </div>
+          <div class="shop-section">
+            <div class="shop-header">
+              <div class="shop-title">🛍️ ショップ / クローゼット</div>
+            </div>
+            <div class="shop-tabs">
+              <button class="shop-tab active" onclick="switchShopTab('background')">背景</button>
+              <button class="shop-tab" onclick="switchShopTab('accessory')">アクセサリー</button>
+            </div>
+            <div class="shop-grid" id="shop-items-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-gacha">
+        <div class="gacha-panel">
+          <div class="gacha-banner">
+            <h2>✨ ペットスキン・ガチャ ✨</h2>
+            <p>新しい姿 of ペットを仲間にしよう！重複すると「ガチャチケット」に変換されます。</p>
+            <div class="gacha-rates">
+              <span class="rate-badge rate-R">R (普通): 70%</span>
+              <span class="rate-badge rate-SR">SR (レア): 25%</span>
+              <span class="rate-badge rate-SSR">SSR (超レア): 5%</span>
+            </div>
+            <div class="gacha-btns">
+              <button class="gacha-btn gacha-btn-1" onclick="drawGacha(1)">
+                <span>1回ガチャ</span><span class="gacha-btn-cost">💰 150 pt</span>
+              </button>
+              <button class="gacha-btn gacha-btn-10" onclick="drawGacha(10)">
+                <span>10連ガチャ</span><span class="gacha-btn-cost">💰 1500 pt</span>
+              </button>
+              <button class="gacha-btn gacha-btn-ticket" id="gacha-ticket-btn" onclick="drawGachaWithTicket()">
+                <span>チケットで1回</span><span class="gacha-btn-cost">🎫 1枚消費</span>
+              </button>
+            </div>
+            <div class="ticket-count">所持チケット: <span id="gacha-ticket-count">0</span> 枚</div>
+          </div>
+          <div class="chart-wrap">
+            <div class="col-header">
+              <div class="col-title">🐾 スキンコレクション</div>
+              <div class="col-hint">クリックしてメインのペットスキンを変更できます</div>
+            </div>
+            <div class="collection-grid" id="collection-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-ranking">
+        <div class="ranking-panel">
+          <div class="ranking-setup" id="ranking-setup-section" style="display:none">
+            <h3>✍️ ランキング表示名設定</h3>
+            <input type="text" id="ranking-username-input" placeholder="ランキングに表示する名前を入力" maxlength="15"/>
+            <button class="timer-btn" onclick="saveRankingName()">名前を保存して登録</button>
+          </div>
+          <div class="ranking-mycard" id="ranking-mycard-row" style="display:none">
+            <div class="ranking-icon" id="mycard-icon">🐱</div>
+            <div class="ranking-mycard-info">
+              <div class="ranking-mycard-name" id="mycard-name">-</div>
+              <div class="ranking-mycard-sub" id="mycard-rank-text">順位: 計算中...</div>
+            </div>
+            <div class="ranking-score">
+              <div id="mycard-score-val">0</div>
+              <div class="ranking-score-label" id="mycard-score-label">今日</div>
+            </div>
+          </div>
+          <div class="ranking-board">
+            <div class="ranking-board-header">
+              <div class="ranking-board-title">🏆 全国リアルタイムランキング</div>
+              <div class="ranking-sort-btns">
+                <button class="sort-btn active" id="rank-sort-today" onclick="switchRankingSort('today')">今日</button>
+                <button class="sort-btn" id="rank-sort-total" onclick="switchRankingSort('total')">累計</button>
+              </div>
+            </div>
+            <div id="ranking-list-container"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="pt-toast" id="pt-toast"></div>
+  <div class="modal-overlay" id="rename-modal">
+    <div class="modal-box">
+      <h3>ペットの名前変更</h3>
+      <input type="text" id="new-pet-name" placeholder="新しい名前を入力" maxlength="12"/>
+      <div class="modal-btns">
+        <button class="timer-btn" onclick="closeRenameModal()">キャンセル</button>
+        <button class="timer-btn primary" onclick="savePetName()">保存</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="gacha-modal">
+    <div class="modal-box" style="width:480px">
+      <div class="result-title" id="gacha-result-title">ガチャ結果</div>
+      <div class="result-grid" id="gacha-result-grid"></div>
+      <div style="text-align:center;margin-top:1rem">
+        <button class="timer-btn primary" style="display:inline-block" onclick="closeGachaModal()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase 設定
+    const SB_URL = "https://your-supabase-url.supabase.co"; 
+    const SB_KEY = "your-supabase-anon-key";
+
+    // アプリ状態
+    let isGuest = false;
+    let authToken = null;
+    let refreshToken = null;
+    let currentUserId = null;
+
+    // タイマー・データ
+    let subjects = [];
+    let logs = [];
+    let points = 0;
+    let activeSubjectId = null;
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let lastTickTime = null;
+
+    // ペット・育成・ショップ
+    let petState = {
+      name: "たまご",
+      level: 1,
+      xp: 0,
+      mainSkin: "egg",
+      ownedSkins: ["egg"],
+      tickets: 0,
+      equippedBg: "default",
+      equippedAcc: "none",
+      ownedBgs: ["default"],
+      ownedAccs: ["none"]
+    };
+
+    const FOOD_ITEMS = [
+      { id: "cookie", name: "クッキー", cost: 30, xp: 15, icon: "🍪" },
+      { id: "candy", name: "キャンディ", cost: 10, xp: 5, icon: "🍬" },
+      { id: "meat", name: "お肉", cost: 80, xp: 50, icon: "🍖" },
+      { id: "cake", name: "ケーキ", cost: 150, xp: 100, icon: "🍰" }
+    ];
+
+    const SHOP_ITEMS = [
+      { id: "bg_blue", name: "爽やかブルー", type: "background", cost: 100, icon: "🟦" },
+      { id: "bg_pink", name: "可愛いピンク", type: "background", cost: 100, icon: "🟪" },
+      { id: "bg_gold", name: "ゴージャス金", type: "background", cost: 500, icon: "🟨" },
+      { id: "acc_glass", name: "丸メガネ", type: "accessory", cost: 200, icon: "👓" },
+      { id: "acc_hat", name: "シルクハット", type: "accessory", cost: 300, icon: "🎩" },
+      { id: "acc_ribbon", name: "赤いリボン", type: "accessory", cost: 150, icon: "🎀" }
+    ];
+
+    const SKINS_DATABASE = {
+      egg: { name: "たまご", icon: "🥚", rank: "R" },
+      slime: { name: "ぷにスライム", icon: "💧", rank: "R" },
+      cat: { name: "おすまし猫", icon: "🐱", rank: "R" },
+      dog: { name: "てくてく犬", icon: "🐶", rank: "R" },
+      rabbit: { name: "ぴょん白ウサギ", icon: "🐰", rank: "SR" },
+      fox: { name: "お稲荷キツネ", icon: "🦊", rank: "SR" },
+      bear: { name: "のんびりクマ", icon: "🐻", rank: "SR" },
+      dragon: { name: "幻の小竜", icon: "🐉", rank: "SSR" },
+      phoenix: { name: "不死鳥の雛", icon: "🦚", rank: "SSR" },
+      unicorn: { name: "星屑の一角獣", icon: "🦄", rank: "SSR" }
+    };
+
+    let currentShopTab = "background";
+    let currentRankingSort = "today";
+
+    async function sbFetch(path, options={}) {
+      const url = SB_URL + path;
+      const headers = { "apikey": SB_KEY, "Content-Type": "application/json" };
+      if (authToken) { headers["Authorization"] = `Bearer ${authToken}`; }
+      const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || res.statusText);
+      }
+      if (res.status === 204) return null;
+      return await res.json();
+    }
+
+    async function ensureValidToken() {
+      try {
+        const exp = localStorage.getItem("sb_expires_at");
+        if (exp && Date.now() > parseInt(exp) - 60000) {
+          const ref = localStorage.getItem("sb_refresh");
+          if (!ref) return;
+          const res = await fetch(SB_URL + "/auth/v1/token?grant_type=refresh_token", {
+            method: "POST",
+            headers: { "apikey": SB_KEY, "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: ref })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            authToken = data.access_token;
+            refreshToken = data.refresh_token;
+            localStorage.setItem("sb_token", authToken);
+            localStorage.setItem("sb_refresh", refreshToken);
+            localStorage.setItem("sb_expires_at", Date.now() + (data.expires_in * 1000));
+          }
+        }
+      } catch(e) { console.error("Token refresh error:", e); }
+    }
+
+    function switchAuthTab(type) {
+      document.getElementById("auth-error").style.display = "none";
+      document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+      document.getElementById("auth-login").style.display = "none";
+      document.getElementById("auth-signup").style.display = "none";
+      document.getElementById("auth-reset").style.display = "none";
+      if (type === 'login') {
+        document.getElementById("auth-login").style.display = "block";
+        document.querySelectorAll(".auth-tab")[0].classList.add("active");
+      } else if (type === 'signup') {
+        document.getElementById("auth-signup").style.display = "block";
+        document.querySelectorAll(".auth-tab")[1].classList.add("active");
+      } else if (type === 'reset') {
+        document.getElementById("auth-reset").style.display = "block";
+      }
+    }
+
+    function switchTab(pname) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      const btn = Array.from(document.querySelectorAll(".tab")).find(t => t.textContent.includes(
+        pname==='timer'?'タイマー':pname==='logs'?'履歴':pname==='music'?'BGM':pname==='pet'?'ペット':pname==='gacha'?'ガチャ':'ランキング'
+      ));
+      if(btn) btn.classList.add("active");
+      const p = document.getElementById("panel-" + pname);
+      if(p) p.classList.add("active");
+      if(pname === 'logs') renderLogsAndChart();
+      if(pname === 'pet') { renderPet(); renderShop(); }
+      if(pname === 'gacha') renderCollection();
+      if(pname === 'ranking') loadRanking();
+    }
+
+    async function doLogin() {
+      showAuthLoading(true);
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      try {
+        const data = await sbFetch("/auth/v1/token?grant_type=password", {
+          method: "POST",
+          body: JSON.stringify({ email, password })
+        });
+        isGuest = false;
+        authToken = data.access_token;
+        refreshToken = data.refresh_token;
+        currentUserId = data.user.id;
+        localStorage.setItem("sb_token", authToken);
+        localStorage.setItem("sb_refresh", refreshToken);
+        localStorage.setItem("sb_expires_at", Date.now() + (data.expires_in * 1000));
+        localStorage.setItem("sb_uid", currentUserId);
+
+        try {
+          const profile = await sbFetch(`/rest/v1/profiles?id=eq.${currentUserId}&select=username`);
+          if (profile && profile.length > 0 && profile[0].username) {
+            localStorage.setItem("sb_username", profile[0].username);
+            document.getElementById("ranking-username-input").value = profile[0].username;
+            document.getElementById("mycard-name").textContent = profile[0].username;
+            document.getElementById("ranking-setup-section").style.display = "block";
+          } else {
+            document.getElementById("ranking-setup-section").style.display = "block";
+          }
+        } catch(_) {
+          document.getElementById("ranking-setup-section").style.display = "block";
+        }
+
+        await loadCloudData();
+        startApp(email);
+      } catch(e) {
+        showAuthError("ログインに失敗しました。認証情報を確認してください。");
+      } finally { showAuthLoading(false); }
+    }
+
+    async function doSignup() {
+      showAuthLoading(true);
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const username = document.getElementById("signup-username").value.trim();
+      if (!email || !password || !username) { showAuthError("全項目入力してください。"); showAuthLoading(false); return; }
+      if (password.length < 6) { showAuthError("パスワードは6文字以上必要です。"); showAuthLoading(false); return; }
+      try {
+        const data = await sbFetch("/auth/v1/signup", {
+          method: "POST",
+          body: JSON.stringify({ email, password, data: { username } })
+        });
+        alert("アカウントが作成されました！自動ログインします。");
+        isGuest = false;
+        if(data.session) {
+          authToken = data.session.access_token;
+          refreshToken = data.session.refresh_token;
+          currentUserId = data.user.id;
+          localStorage.setItem("sb_token", authToken);
+          localStorage.setItem("sb_refresh", refreshToken);
+          localStorage.setItem("sb_expires_at", Date.now() + (data.session.expires_in * 1000));
+          localStorage.setItem("sb_uid", currentUserId);
+        }
+        localStorage.setItem("sb_username", username);
+        if(currentUserId) {
+          await sbFetch("/rest/v1/profiles", {
+            method: "POST",
+            body: JSON.stringify({ id: currentUserId, username: username })
+          }).catch(console.error);
+        }
+        initDefaultData();
+        if(!currentUserId) { switchAuthTab('login'); return; }
+        await syncToCloud();
+        startApp(email);
+      } catch(e) {
+        showAuthError("登録に失敗しました: " + e.message);
+      } finally { showAuthLoading(false); }
+    }
+
+    async function doPasswordReset() {
+      const email = document.getElementById("reset-email").value.trim();
+      if(!email) { alert("メールアドレスを入力してください。"); return; }
+      showAuthLoading(true);
+      try {
+        await sbFetch("/auth/v1/recover", {
+          method: "POST",
+          body: JSON.stringify({ email })
+        });
+        alert("パスワード再設定用のメールを送信しました。");
+        switchAuthTab('login');
+      } catch(e) { alert("送信エラー: " + e.message); }
+      finally { showAuthLoading(false); }
+    }
+
+    function doGuest() {
+      isGuest = true;
+      currentUserId = "guest";
+      initDefaultData();
+      loadLocalBackup();
+      startApp("ゲストユーザー");
+    }
+
+    function doLogout() {
+      if(timerInterval) toggleTimer();
+      authToken = null; refreshToken = null; currentUserId = null;
+      try {
+        localStorage.removeItem("sb_token");
+        localStorage.removeItem("sb_refresh");
+        localStorage.removeItem("sb_expires_at");
+        localStorage.removeItem("sb_uid");
+      } catch(_) {}
+      document.getElementById("main-app").style.display = "none";
+      document.getElementById("auth-screen").style.display = "flex";
+    }
+
+    function showAuthError(msg) { const e = document.getElementById("auth-error"); e.textContent = msg; e.style.display = "block"; }
+    function showAuthLoading(s) { document.getElementById("auth-loading").style.display = s ? "block" : "none"; }
+
+    function startApp(userIdent) {
+      document.getElementById("auth-screen").style.display = "none";
+      document.getElementById("main-app").style.display = "block";
+      document.getElementById("header-email-display").textContent = userIdent;
+      if (isGuest) { document.getElementById("sync-btn").style.display = "none"; }
+      else { document.getElementById("sync-btn").style.display = "flex"; }
+      updatePointsDisplay();
+      renderSubjects();
+      setInterval(() => { if(isGuest) saveLocalBackup(); else syncToCloud(true); }, 30000);
+    }
+
+    function initDefaultData() {
+      subjects = [
+        { id: "sub1", name: "国語", color: "#185FA5" },
+        { id: "sub2", name: "数学", color: "#e74c3c" },
+        { id: "sub3", name: "英語", color: "#2ecc71" }
+      ];
+      logs = [];
+      points = 0;
+      petState = {
+        name: "たまご", level: 1, xp: 0, mainSkin: "egg", ownedSkins: ["egg"],
+        tickets: 0, equippedBg: "default", equippedAcc: "none",
+        ownedBgs: ["default"], ownedAccs: ["none"]
+      };
+    }
+
+    function loadLocalBackup() {
+      try {
+        const s = localStorage.getItem("local_subjects"); if(s) subjects = JSON.parse(s);
+        const l = localStorage.getItem("local_logs"); if(l) logs = JSON.parse(l);
+        const p = localStorage.getItem("local_points"); if(p) points = parseInt(p)||0;
+        const pt = localStorage.getItem("local_pet"); if(pt) petState = JSON.parse(pt);
+      } catch(e) { console.error(e); }
+    }
+
+    function saveLocalBackup() {
+      try {
+        localStorage.setItem("local_subjects", JSON.stringify(subjects));
+        localStorage.setItem("local_logs", JSON.stringify(logs));
+        localStorage.setItem("local_points", points.toString());
+        localStorage.setItem("local_pet", JSON.stringify(petState));
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadCloudData() {
+      try {
+        const res = await sbFetch(`/rest/v1/userdata?id=eq.${currentUserId}&select=data`);
+        if (res && res.length > 0 && res[0].data) {
+          const d = res[0].data;
+          subjects = d.subjects || [];
+          logs = d.logs || [];
+          points = d.points || 0;
+          petState = d.petState || petState;
+        } else {
+          initDefaultData();
+          await syncToCloud();
+        }
+      } catch(e) { console.error("Cloud load failed, fallback to local:", e); loadLocalBackup(); }
+    }
+
+    async function syncToCloud(silent=false) {
+      if(isGuest || !currentUserId) return;
+      await ensureValidToken();
+      const payload = { id: currentUserId, data: { subjects, logs, points, petState }, updated_at: new Date().toISOString() };
+      try {
+        await sbFetch("/rest/v1/userdata", {
+          method: "POST",
+          headers: { "Prefer": "resolution=merge-duplicates" },
+          body: JSON.stringify(payload)
+        });
+        sendScoreToRanking().catch(()=>{});
+      } catch(e) {
+        console.error("Cloud sync failed:", e);
+        if(!silent) alert("同期エラーが発生しました: " + e.message);
+      }
+    }
+
+    async function manualSync() {
+      const btn = document.getElementById("sync-btn");
+      btn.classList.add("syncing"); btn.textContent = "🔄 同期中...";
+      await syncToCloud(false);
+      setTimeout(() => { btn.classList.remove("syncing"); btn.textContent = "🔄 同期"; toast("クラウドに保存しました"); }, 600);
+    }
+
+    async function sendScoreToRanking() {
+      if(isGuest||!currentUserId) return;
+      const username = localStorage.getItem("sb_username") || "";
+      if(!username) return;
+      const t = getTodaySeconds();
+      const tot = logs.reduce((acc,curr)=>acc+curr.duration, 0);
+      await sbFetch("/rest/v1/rankings", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates" },
+        body: JSON.stringify({ id: currentUserId, username, today_score: t, total_score: tot, main_skin: petState.mainSkin, updated_at: new Date().toISOString() })
+      });
+    }
+
+    function updatePointsDisplay() {
+      document.getElementById("header-pt-val").textContent = points;
+      const b = document.getElementById("shop-pt-badge"); if(b) b.textContent = `所持: ${points} pt`;
+    }
+
+    function toast(msg) {
+      const t = document.getElementById("pt-toast"); t.textContent = msg; t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2500);
+    }
+
+    function renderSubjects() {
+      const g = document.getElementById("subject-grid"); g.innerHTML = "";
+      if(subjects.length===0){ g.innerHTML="<p style='color:#888;grid-column:1/-1;text-align:center;font-size:14px;'>科目を追加してください</p>"; return; }
+      subjects.forEach(s => {
+        const todaySec = logs.filter(l => l.subjectId === s.id && isToday(l.date)).reduce((acc,curr)=>acc+curr.duration, 0);
+        const card = document.createElement("div");
+        card.className = "subject-card" + (activeSubjectId === s.id ? " active" : "");
+        card.onclick = () => selectSubject(s.id);
+        card.innerHTML = `
+          <div class="subject-icon" style="color:${s.color}"><i class="ti ti-bookmark"></i></div>
+          <div class="subject-name">${escapeHtml(s.name)}</div>
+          <div class="subject-today">${formatHms(todaySec)}</div>
+        `;
+        g.appendChild(card);
+      });
+    }
+
+    function selectSubject(id) {
+      if(timerInterval) { alert("タイマー作動中は科目を変更できません。"); return; }
+      activeSubjectId = id;
+      const s = subjects.find(x => x.id === id);
+      document.getElementById("timer-subject-name").textContent = s ? s.name : "科目が選択されていません";
+      renderSubjects();
+      updatePointsPreview();
+    }
+
+    function toggleTimer() {
+      if(!activeSubjectId) { alert("学習する科目を選択してください。"); return; }
+      const btn = document.getElementById("timer-start-btn");
+      if(timerInterval) {
+        clearInterval(timerInterval); timerInterval = null;
+        btn.textContent = "スタート"; btn.classList.remove("secondary"); btn.classList.add("primary");
+        saveSession();
+      } else {
+        lastTickTime = Date.now();
+        timerInterval = setInterval(tick, 250);
+        btn.textContent = "ストップ"; btn.classList.remove("primary"); btn.classList.add("secondary");
+      }
+    }
+
+    function tick() {
+      const now = Date.now();
+      const diff = Math.floor((now - lastTickTime) / 1000);
+      if(diff >= 1) {
+        timerSeconds += diff;
+        lastTickTime += diff * 1000;
+        document.getElementById("timer-time-display").textContent = formatHms(timerSeconds);
+        updatePointsPreview();
+      }
+    }
+
+    function updatePointsPreview() {
+      const view = document.getElementById("pt-earn-preview");
+      if(timerSeconds <= 0) { view.style.display = "none"; return; }
+      view.style.display = "inline-block";
+      const basePt = Math.floor(timerSeconds / 60);
+      const mult = getEquippedAccMultiplier();
+      const finPt = Math.floor(basePt * mult);
+      view.textContent = `推定獲得: +${finPt} pt (倍率: ${mult}x)`;
+    }
+
+    function resetTimer() {
+      if(timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      timerSeconds = 0;
+      document.getElementById("timer-time-display").textContent = "00:00:00";
+      document.getElementById("timer-start-btn").textContent = "スタート";
+      document.getElementById("timer-start-btn").className = "timer-btn primary";
+      document.getElementById("pt-earn-preview").style.display = "none";
+    }
+
+    function saveSession() {
+      if(timerSeconds < 5) { resetTimer(); return; }
+      const basePt = Math.floor(timerSeconds / 60);
+      const mult = getEquippedAccMultiplier();
+      const earnedPt = Math.floor(basePt * mult);
+      
+      const itemMult = getActiveItemMultiplier();
+      const earnedXp = Math.floor(timerSeconds * itemMult);
+
+      points += earnedPt;
+      logs.unshift({
+        id: "log_" + Date.now(),
+        subjectId: activeSubjectId,
+        duration: timerSeconds,
+        date: new Date().toISOString()
+      });
+
+      addPetXp(earnedXp);
+
+      const s = subjects.find(x => x.id === activeSubjectId);
+      alert(`お疲れ様でした！\n【成果】\n・学習時間: ${formatHms(timerSeconds)}\n・獲得ポイント: ${earnedPt} pt\n・ペット経験値: ${earnedXp} XP`);
+      
+      resetTimer();
+      updatePointsDisplay();
+      renderSubjects();
+      if(!isGuest) syncToCloud(true); else saveLocalBackup();
+    }
+
+    function addSubject() {
+      const name = document.getElementById("new-sub-name").value.trim();
+      const color = document.getElementById("new-sub-color").value;
+      if(!name) return;
+      subjects.push({ id: "sub_" + Date.now(), name, color });
+      document.getElementById("new-sub-name").value = "";
+      renderSubjects();
+      if(!isGuest) syncToCloud(true); else saveLocalBackup();
+    }
+
+    function renderLogsAndChart() {
+      const list = document.getElementById("log-list"); list.innerHTML = "";
+      if(logs.length===0) { list.innerHTML = "<div class='empty-msg'>学習履歴がまだありません</div>"; }
+      else {
+        logs.slice(0, 30).forEach(l => {
+          const s = subjects.find(x => x.id === l.subjectId);
+          const div = document.createElement("div"); div.className = "log-item";
+          div.innerHTML = `
+            <div class="log-left">
+              <div class="log-dot" style="background:${s?s.color:'#888'}"></div>
+              <div>
+                <div class="log-name">${escapeHtml(s?s.name:'不明な科目')}</div>
+                <div class="log-date">${formatDate(l.date)}</div>
+              </div>
+            </div>
+            <div style="font-weight:500">${formatHms(l.duration)}</div>
+          `;
+          list.appendChild(div);
+        });
+      }
+
+      const chart = document.getElementById("chart-bars"); chart.innerHTML = "";
+      const legend = document.getElementById("chart-legend"); legend.innerHTML = "";
+      const days = [];
+      for(let i=6; i>=0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i); days.push(d);
+      }
+      
+      let maxDayTotal = 0;
+      const dayTotals = days.map(d => {
+        const dayLogs = logs.filter(l => isSameDay(new Date(l.date), d));
+        const tot = dayLogs.reduce((acc,curr)=>acc+curr.duration, 0);
+        if(tot > maxDayTotal) maxDayTotal = tot;
+        return { date: d, total: tot, logs: dayLogs };
+      });
+
+      dayTotals.forEach(dt => {
+        const col = document.createElement("div"); col.className = "bar-col";
+        const pct = maxDayTotal > 0 ? (dt.total / maxDayTotal) * 100 : 0;
+        
+        let subBarsHtml = "";
+        if(dt.total > 0) {
+          const subMap = {};
+          dt.logs.forEach(l => { subMap[l.subjectId] = (subMap[l.subjectId]||0) + l.duration; });
+          for(const sid in subMap) {
+            const s = subjects.find(x => x.id === sid);
+            const h = (subMap[sid] / dt.total) * pct;
+            subBarsHtml += `<div style="background:${s?s.color:'#888'};width:100%;height:${h}%" title="${s?s.name:''}: ${formatHms(subMap[sid])}"></div>`;
+          }
+        } else {
+          subBarsHtml = `<div class="bar-fill" style="background:#ddd;height:2px"></div>`;
+        }
+
+        col.innerHTML = `
+          <div class="bar-val">${dt.total>0 ? Math.round(dt.total/60)+'分' : ''}</div>
+          <div style="width:100%;height:120px;display:flex;flex-direction:column-reverse;border-radius:4px;overflow:hidden">${subBarsHtml}</div>
+          <div class="bar-label">${dt.date.getDate()}日</div>
+        `;
+        chart.appendChild(col);
+      });
+
+      subjects.forEach(s => {
+        const item = document.createElement("div"); item.className = "legend-item";
+        item.innerHTML = `<div class="legend-dot" style="background:${s.color}"></div><span>${escapeHtml(s.name)}</span>`;
+        legend.appendChild(item);
+      });
+
+      const todaySec = logs.filter(l => isToday(l.date)).reduce((acc,curr)=>acc+curr.duration, 0);
+      const weekSec = logs.filter(l => isThisWeek(l.date)).reduce((acc,curr)=>acc+curr.duration, 0);
+      const totalSec = logs.reduce((acc,curr)=>acc+curr.duration, 0);
+      document.getElementById("stat-today").innerHTML = Math.floor(todaySec/60) + "<span class='stat-unit'>分</span>";
+      document.getElementById("stat-week").innerHTML = Math.floor(weekSec/60) + "<span class='stat-unit'>分</span>";
+      document.getElementById("stat-total").innerHTML = Math.floor(totalSec/60) + "<span class='stat-unit'>分</span>";
+    }
+
+    function saveBgmUrl() {
+      const u = document.getElementById("bgm-url-input").value.trim();
+      try {
+        localStorage.setItem("bgm_url", u);
+        toast("BGMのURLを保存しました");
+        setupBgmLink();
+      } catch(e){}
+    }
+
+    function setupBgmLink() {
+      const u = localStorage.getItem("bgm_url");
+      const btn = document.getElementById("yt-open-link");
+      if(u && (u.includes("youtube.com") || u.includes("youtu.be"))) {
+        btn.href = u; btn.style.display = "inline-flex";
+      } else { btn.style.display = "none"; }
+    }
+    setTimeout(setupBgmLink, 500);
+
+    function addPetXp(amount) {
+      if(!petState.level) petState.level = 1;
+      if(!petState.xp) petState.xp = 0;
+      petState.xp += amount;
+      while(petState.xp >= petState.level * 100) {
+        petState.xp -= petState.level * 100;
+        petState.level++;
+        alert(`🎉 ペットレベルアップ！\nLv.${petState.level} になりました！`);
+      }
+    }
+
+    function renderPet() {
+      document.getElementById("pet-level-display").textContent = `Lv.${petState.level}`;
+      document.getElementById("pet-name-display").textContent = petState.name || "ペット";
+      const nextXp = petState.level * 100;
+      const xpPct = Math.min(100, (petState.xp / nextXp) * 100);
+      document.getElementById("pet-xp-fill").style.width = xpPct + "%";
+      document.getElementById("pet-xp-text").textContent = `${petState.xp} / ${nextXp}`;
+
+      const skinInfo = SKINS_DATABASE[petState.mainSkin || "egg"] || SKINS_DATABASE.egg;
+      const rb = document.getElementById("pet-rank-badge");
+      rb.textContent = skinInfo.rank;
+      rb.className = "rank-badge rank-" + skinInfo.rank;
+
+      const m = getActiveItemMultiplier();
+      document.getElementById("item-multiplier-desc").textContent = `現在の獲得経験値: ${m} 倍 (${itemTimerActive()?'アイテム効果中':'通常状態'})`;
+
+      drawPetCanvas();
+      renderExpItems();
+    }
+
+    function drawPetCanvas() {
+      const cv = document.getElementById("petCanvas"); if(!cv) return;
+      const ctx = cv.getContext("2d");
+      ctx.clearRect(0,0,160,160);
+
+      const bg = petState.equippedBg || "default";
+      if(bg === 'bg_blue') { ctx.fillStyle = "#e0f4ff"; ctx.fillRect(0,0,160,160); }
+      else if(bg === 'bg_pink') { ctx.fillStyle = "#ffe0f0"; ctx.fillRect(0,0,160,160); }
+      else if(bg === 'bg_gold') { ctx.fillStyle = "#fff8d0"; ctx.fillRect(0,0,160,160); }
+      else { ctx.fillStyle = "rgba(0,0,0,0.02)"; ctx.fillRect(0,0,160,160); }
+
+      const skinInfo = SKINS_DATABASE[petState.mainSkin || "egg"] || SKINS_DATABASE.egg;
+      ctx.font = "70px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(skinInfo.icon, 80, 85);
+
+      const acc = petState.equippedAcc || "none";
+      if(acc !== 'none') {
+        const accItem = SHOP_ITEMS.find(x => x.id === acc);
+        if(accItem) {
+          ctx.font = "30px sans-serif";
+          if(acc === 'acc_glass') ctx.fillText(accItem.icon, 80, 75);
+          if(acc === 'acc_hat') ctx.fillText(accItem.icon, 80, 42);
+          if(acc === 'acc_ribbon') ctx.fillText(accItem.icon, 110, 110);
+        }
+      }
+    }
+
+    function renderExpItems() {
+      const g = document.getElementById("exp-items-grid"); g.innerHTML = "";
+      FOOD_ITEMS.forEach(item => {
+        const div = document.createElement("div"); div.className = "exp-item";
+        div.onclick = () => buyFoodItem(item);
+        div.innerHTML = `
+          <div class="exp-item-icon">${item.icon}</div>
+          <div class="exp-item-name">${item.name}</div>
+          <div class="exp-item-xp">+${item.xp} XP</div>
+          <div class="exp-item-cost">💰 ${item.cost}</div>
+        `;
+        g.appendChild(div);
+      });
+    }
+
+    function buyFoodItem(item) {
+      if(points < item.cost) { alert("ポイントが足りません。"); return; }
+      if(confirm(`💰 ${item.cost} pt を消費して「${item.name}」を与えますか？`)) {
+        points -= item.cost;
+        addPetXp(item.xp);
+        toast(`${item.name}をあげて ${item.xp} XP獲得！`);
+        updatePointsDisplay();
+        renderPet();
+        if(!isGuest) syncToCloud(true); else saveLocalBackup();
+      }
+    }
+
+    function renderShop() {
+      const g = document.getElementById("shop-items-grid"); g.innerHTML = "";
+      if(!petState.ownedBgs) petState.ownedBgs = ["default"];
+      if(!petState.ownedAccs) petState.ownedAccs = ["none"];
+
+      const filtered = SHOP_ITEMS.filter(x => x.type === currentShopTab);
+      filtered.forEach(item => {
+        const div = document.createElement("div"); div.className = "shop-item";
+        
+        let isOwned = false;
+        let isEquipped = false;
+        if(item.type === 'background') {
+          isOwned = petState.ownedBgs.includes(item.id);
+          isEquipped = petState.equippedBg === item.id;
+        } else {
+          isOwned = petState.ownedAccs.includes(item.id);
+          isEquipped = petState.equippedAcc === item.id;
+        }
+
+        if(isEquipped) div.classList.add("equipped");
+        else if(isOwned) div.classList.add("owned-acc");
+
+        div.onclick = () => handleShopClick(item, isOwned, isEquipped);
+
+        let badgeHtml = `<div class="shop-item-cost">💰 ${item.cost}</div>`;
+        if(isEquipped) badgeHtml = `<span class="shop-item-badge badge-equipped">装着中</span>`;
+        else if(isOwned) badgeHtml = `<span class="shop-item-badge badge-owned">所持 (着替える)</span>`;
+
+        div.innerHTML = `
+          <div class="shop-item-icon">${item.icon}</div>
+          <div class="shop-item-name">${item.name}</div>
+          ${badgeHtml}
+        `;
+        g.appendChild(div);
+      });
+    }
+
+    function switchShopTab(t) {
+      currentShopTab = t;
+      document.querySelectorAll(".shop-tab").forEach((b,idx) => {
+        b.classList.toggle("active", (t==='background'&&idx===0)||(t==='accessory'&&idx===1));
+      });
+      renderShop();
+    }
+
+    function handleShopClick(item, isOwned, isEquipped) {
+      if(isEquipped) return;
+      if(isOwned) {
+        if(item.type === 'background') petState.equippedBg = item.id;
+        else petState.equippedAcc = item.id;
+        toast(`着替えました！`);
+        renderPet(); renderShop();
+        if(!isGuest) syncToCloud(true); else saveLocalBackup();
+      } else {
+        if(points < item.cost) { alert("ポイントが足りません。"); return; }
+        if(confirm(`💰 ${item.cost} pt で「${item.name}」を購入しますか？`)) {
+          points -= item.cost;
+          if(item.type === 'background') {
+            petState.ownedBgs.push(item.id); petState.equippedBg = item.id;
+          } else {
+            petState.ownedAccs.push(item.id); petState.equippedAcc = item.id;
+          }
+          toast("購入して装着しました！");
+          updatePointsDisplay(); renderPet(); renderShop();
+          if(!isGuest) syncToCloud(true); else saveLocalBackup();
+        }
+      }
+    }
+
+    function renderCollection() {
+      const g = document.getElementById("collection-grid"); g.innerHTML = "";
+      if(!petState.ownedSkins) petState.ownedSkins = ["egg"];
+      
+      const counts = {};
+      petState.ownedSkins.forEach(s => counts[s] = (counts[s]||0) + 1);
+
+      const uniqueSkins = Array.from(new Set(petState.ownedSkins));
+      uniqueSkins.forEach(sid => {
+        const info = SKINS_DATABASE[sid]; if(!info) return;
+        const div = document.createElement("div");
+        div.className = `col-card ${info.rank}`;
+        if(petState.mainSkin === sid) div.classList.add("selected-main");
+        div.onclick = () => selectSkin(sid);
+        
+        let mainBadge = petState.mainSkin === sid ? `<span class="main-badge">メイン</span>` : "";
+        div.innerHTML = `
+          ${mainBadge}
+          <div class="col-card-icon">${info.icon}</div>
+          <div class="col-card-name">${info.name}</div>
+          <div class="col-count">所持数: ${counts[sid]}</div>
+        `;
+        g.appendChild(div);
+      });
+      document.getElementById("gacha-ticket-count").textContent = petState.tickets || 0;
+    }
+
+    function selectSkin(sid) {
+      petState.mainSkin = sid;
+      toast("メインペットスキンを変更しました");
+      renderCollection();
+      if(!isGuest) syncToCloud(true); else saveLocalBackup();
+    }
+
+    function drawGacha(times) {
+      const cost = times === 10 ? 1500 : 150;
+      if(points < cost) { alert("ポイントが足りません。"); return; }
+      if(!confirm(`💰 ${cost} pt を消費してガチャを ${times} 回引きますか？`)) return;
+      
+      points -= cost;
+      executeGachaLogic(times);
+    }
+
+    function drawGachaWithTicket() {
+      if(!petState.tickets || petState.tickets < 1) { alert("ガチャチケットを持っていません。"); return; }
+      if(!confirm(`🎫 チケットを 1 枚消費してガチャを引きますか？`)) return;
+      petState.tickets--;
+      executeGachaLogic(1);
+    }
+
+    function executeGachaLogic(times) {
+      if(!petState.ownedSkins) petState.ownedSkins = ["egg"];
+      if(!petState.tickets) petState.tickets = 0;
+
+      const rList = Object.keys(SKINS_DATABASE).filter(k=>SKINS_DATABASE[k].rank==='R');
+      const srList = Object.keys(SKINS_DATABASE).filter(k=>SKINS_DATABASE[k].rank==='SR');
+      const ssrList = Object.keys(SKINS_DATABASE).filter(k=>SKINS_DATABASE[k].rank==='SSR');
+
+      const results = [];
+      for(let i=0; i<times; i++) {
+        const r = Math.random() * 100;
+        let skinId = "egg";
+        if(r < 5) skinId = ssrList[Math.floor(Math.random()*ssrList.length)];
+        else if(r < 30) skinId = srList[Math.floor(Math.random()*srList.length)];
+        else skinId = rList[Math.floor(Math.random()*rList.length)];
+
+        const isNew = !petState.ownedSkins.includes(skinId);
+        petState.ownedSkins.push(skinId);
+        
+        let subText = "";
+        const occurrences = petState.ownedSkins.filter(x => x === skinId).length;
+        if(occurrences > 1) {
+          petState.tickets++;
+          subText = "♻️ 重複によりチケット+1";
+        }
+
+        results.push({ id: skinId, isNew: isNew, subText: subText });
+      }
+
+      updatePointsDisplay();
+      showGachaResults(results);
+      if(!isGuest) syncToCloud(true); else saveLocalBackup();
+    }
+
+    function showGachaResults(results) {
+      const g = document.getElementById("gacha-result-grid"); g.innerHTML = "";
+      document.getElementById("gacha-result-title").textContent = `ガチャ結果 (${results.length}回)`;
+      
+      results.forEach(res => {
+        const info = SKINS_DATABASE[res.id];
+        const card = document.createElement("div");
+        card.className = `result-card ${info.rank}`;
+        let badge = res.isNew ? `<span class="result-new-badge">NEW</span>` : "";
+        card.innerHTML = `
+          ${badge}
+          <div class="result-card-icon">${info.icon}</div>
+          <div class="result-card-name">${info.name}</div>
+          <div style="font-size:10px;color:#e74c3c;margin-top:2px;">${res.subText}</div>
+        `;
+        g.appendChild(card);
+      });
+
+      document.getElementById("gacha-modal").classList.add("show");
+    }
+
+    function closeGachaModal() {
+      document.getElementById("gacha-modal").classList.remove("show");
+      renderCollection();
+    }
+
+    async function saveRankingName() {
+      const name = document.getElementById("ranking-username-input").value.trim();
+      if(!name) { alert("名前を入力してください。"); return; }
+      try {
+        localStorage.setItem("sb_username", name);
+        alert("名前を登録しました！同期を行うと反映されます。");
+        await sendScoreToRanking();
+        loadRanking();
+      } catch(e) { alert("エラーが発生しました: " + e.message); }
+    }
+
+    async function switchRankingSort(mode) {
+      currentRankingSort = mode;
+      document.getElementById("rank-sort-today").classList.toggle("active", mode==='today');
+      document.getElementById("rank-sort-total").classList.toggle("active", mode==='total');
+      loadRanking();
+    }
+
+    async function loadRanking() {
+      const container = document.getElementById("ranking-list-container");
+      container.innerHTML = "<div class='ranking-loading'>ランキング読み込み中...</div>";
+      
+      const myCard = document.getElementById("ranking-mycard-row");
+      myCard.style.display = "none";
+
+      const currentUsername = localStorage.getItem("sb_username");
+      if(currentUsername) {
+        document.getElementById("ranking-setup-section").style.display = "block";
+        document.getElementById("ranking-username-input").value = currentUsername;
+      } else {
+        document.getElementById("ranking-setup-section").style.display = "block";
+      }
+
+      if(isGuest) {
+        container.innerHTML = "<div class='ranking-empty'>ゲストユーザーはランキングに参加できません。</div>";
+        return;
+      }
+
+      try {
+        const orderCol = currentRankingSort === 'today' ? 'today_score' : 'total_score';
+        const list = await sbFetch(`/rest/v1/rankings?order=${orderCol}.desc&limit=100`);
+        container.innerHTML = "";
+        
+        if(!list || list.length === 0) {
+          container.innerHTML = "<div class='ranking-empty'>データがありません。</div>";
+          return;
+        }
+
+        let myRank = -1;
+        let myRowData = null;
+
+        list.forEach((row, index) => {
+          const rank = index + 1;
+          const isMe = row.id === currentUserId;
+          if(isMe) { myRank = rank; myRowData = row; }
+
+          const skin = SKINS_DATABASE[row.main_skin] || SKINS_DATABASE.egg;
+          const score = currentRankingSort === 'today' ? row.today_score : row.total_score;
+
+          let rankClass = "";
+          if(rank === 1) rankClass = "rank-gold";
+          if(rank === 2) rankClass = "rank-silver";
+          if(rank === 3) rankClass = "rank-bronze";
+
+          const rowDiv = document.createElement("div");
+          rowDiv.className = "ranking-row" + (isMe ? " me" : "");
+          rowDiv.innerHTML = `
+            <div class="ranking-rank ${rankClass}">#${rank}</div>
+            <div class="ranking-icon">${skin.icon}</div>
+            <div class="ranking-info">
+              <div class="ranking-username">${escapeHtml(row.username)}</div>
+              <div class="ranking-sub">最終更新: ${formatDateShort(row.updated_at)}</div>
+            </div>
+            <div class="ranking-score">${Math.floor(score/60)}分</div>
+          `;
+          container.appendChild(rowDiv);
+        });
+
+        if(myRank !== -1 && myRowData) {
+          myCard.style.display = "flex";
+          const mySkin = SKINS_DATABASE[myRowData.main_skin] || SKINS_DATABASE.egg;
+          document.getElementById("mycard-icon").textContent = mySkin.icon;
+          document.getElementById("mycard-name").textContent = myRowData.username;
+          document.getElementById("mycard-rank-text").textContent = `全国順位: #${myRank}`;
+          const score = currentRankingSort === 'today' ? myRowData.today_score : myRowData.total_score;
+          document.getElementById("mycard-score-val").textContent = Math.floor(score/60) + "分";
+          document.getElementById("mycard-score-label").textContent = currentRankingSort === 'today' ? "今日" : "累計";
+        } else if(currentUsername) {
+          myCard.style.display = "flex";
+          document.getElementById("mycard-icon").textContent = SKINS_DATABASE[petState.mainSkin].icon;
+          document.getElementById("mycard-name").textContent = currentUsername;
+          document.getElementById("mycard-rank-text").textContent = `全国順位: 圏外 / 未同期`;
+          const s = currentRankingSort === 'today' ? getTodaySeconds() : logs.reduce((a,c)=>a+c.duration, 0);
+          document.getElementById("mycard-score-val").textContent = Math.floor(s/60) + "分";
+          document.getElementById("mycard-score-label").textContent = currentRankingSort === 'today' ? "今日" : "累計";
+        }
+
+      } catch(e) {
+        container.innerHTML = "<div class='ranking-empty'>ランキングの読み込みに失敗しました。</div>";
+        console.error(e);
+      }
+    }
+
+    function openRenameModal() {
+      document.getElementById("new-pet-name").value = petState.name || "たまご";
+      document.getElementById("rename-modal").classList.add("show");
+    }
+    function closeRenameModal() { document.getElementById("rename-modal").classList.remove("show"); }
+    function savePetName() {
+      const n = document.getElementById("new-pet-name").value.trim();
+      if(!n) return;
+      petState.name = n;
+      closeRenameModal();
+      renderPet();
+      if(!isGuest) syncToCloud(true); else saveLocalBackup();
+    }
+
+    function getEquippedAccMultiplier() {
+      const acc = petState.equippedAcc || "none";
+      if(acc === 'acc_glass') return 1.1;
+      if(acc === 'acc_hat') return 1.2;
+      if(acc === 'acc_ribbon') return 1.15;
+      return 1.0;
+    }
+
+    function getActiveItemMultiplier() { return 1.0; }
+    function itemTimerActive() { return false; }
+
+    function getTodaySeconds() {
+      return logs.filter(l => isToday(l.date)).reduce((acc,curr)=>acc+curr.duration, 0);
+    }
+
+    function isToday(isoString) { return isSameDay(new Date(isoString), new Date()); }
+    function isSameDay(d1, d2) { return d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate(); }
+    function isThisWeek(isoString) {
+      const d = new Date(isoString); const now = new Date();
+      const diffTime = Math.abs(now - d); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 7;
+    }
+
+    function formatHms(sec) {
+      const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function formatDate(isoString) {
+      const d = new Date(isoString);
+      return `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function formatDateShort(isoString) {
+      if(!isoString) return "-";
+      const d = new Date(isoString);
+      return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function escapeHtml(str) {
+      if(!str) return "";
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const savedUid = localStorage.getItem("sb_uid");
+        const savedToken = localStorage.getItem("sb_token");
+        if(savedUid && savedToken && savedUid !== 'guest') {
+          currentUserId = savedUid;
+          authToken = savedToken;
+          refreshToken = localStorage.getItem("sb_refresh");
+          
+          const res = await sbFetch("/auth/v1/user", { method: "GET" });
+          if(res && res.id) {
+            isGuest = false;
+            await loadCloudData();
+            const username = localStorage.getItem("sb_username") || "";
+            if(username) {
+              document.getElementById("ranking-username-input").value = username;
+              document.getElementById("mycard-name").textContent = username;
+              document.getElementById("ranking-setup-section").style.display = "block";
+            }
+            startApp(res.email);
+            setInterval(() => { if(!isGuest && currentUserId) ensureValidToken(); }, 4*60*1000);
+            return;
+          }
+        }
+      } catch(e) {
+        console.error("auto-login failed:", e);
+        authToken = null; refreshToken = null; currentUserId = null;
+        try {
+          localStorage.removeItem("sb_token");
+          localStorage.removeItem("sb_refresh");
+          localStorage.removeItem("sb_expires_at");
+          localStorage.removeItem("sb_uid");
+        } catch(_) {}
+      }
+
+      try { const s = localStorage.getItem("bgm_url"); if(s) document.getElementById("bgm-url-input").value = s; } catch(e){}
+
+      document.getElementById("auth-screen").style.display = "flex";
+    });
+  </script>
+</body>
+</html>
